@@ -1,0 +1,16 @@
+services:
+  ctrace:
+    build:
+      context: .
+    image: ctrace
+    container_name: ctrace
+    privileged: true
+    volumes:
+      - /lib/modules:/lib/modules:ro
+      - /usr/src:/usr/src:ro
+
+      - /sys/kernel/debug:/sys/kernel/debug
+      - /sys/fs/cgroup:/sys/fs/cgroup
+      - /sys/fs/bpf:/sys/fs/bpf
+
+      - /var/run/docker.sock:/var/run/docker.sock:ro
