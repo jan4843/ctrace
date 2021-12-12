@@ -11,7 +11,7 @@ class DockerRun:
         )
 
     @staticmethod
-    def _image_tag(image):
+    def _image_tag(image) -> str:
         try:
             return image.split(':')[1]
         except IndexError:
