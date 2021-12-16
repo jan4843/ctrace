@@ -8,6 +8,7 @@ class DockerRun:
         self.container = self.client.containers.run(
             image, command, **kwargs,
             detach=True,
+            remove=True,
         )
 
     @staticmethod

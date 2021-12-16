@@ -2,7 +2,8 @@
 #include <linux/pid_namespace.h>
 #include <linux/sched.h>
 
-#define CONTAINER_ID_LEN 12
+#define CONTAINER_ID_LEN 64
+#define CONTAINER_ID_SHORT_LEN 12
 #define STRING_MAX_LEN 32
 
 struct container
@@ -21,8 +22,10 @@ struct string
     char value[STRING_MAX_LEN + 1];
 };
 
+#ifdef DEBUG
 BPF_HASH(capability_names, int, struct string);
 BPF_HASH(syscall_names, int, struct string);
+#endif
 
 BPF_HASH(pid_to_container, int, struct container);
 BPF_HASH(container_not_started, struct container, int);
@@ -97,6 +100,7 @@ static inline int get_container(struct task_struct *task, struct container *cont
     return true;
 }
 
+#ifdef DEBUG
 static inline void get_capability_name(int id, char *name)
 {
     struct string *string_ptr = (struct string *)capability_names.lookup(&id);
@@ -116,6 +120,7 @@ static inline void get_syscall_name(int id, char *name)
     for (int i = 0; i < STRING_MAX_LEN; i++)
         name[i] = string_ptr->value[i];
 }
+#endif
 
 static inline bool is_runc()
 {
@@ -159,13 +164,14 @@ static inline void set_container_not_started(struct container container)
     container_not_started.insert(&container, &zero);
 }
 
+#ifdef DEBUG
 static void print_event(struct container *container, char *type, char *value)
 {
-    char message[256] = {0};
+    char message[128] = {0};
     int i = 0;
 
     message[i++] = '[';
-    for (int j = 0; j < CONTAINER_ID_LEN; j++)
+    for (int j = 0; j < CONTAINER_ID_SHORT_LEN; j++)
         message[i++] = container->id[j];
     message[i++] = ']';
 
@@ -189,6 +195,7 @@ static void print_event(struct container *container, char *type, char *value)
     bpf_trace_printk("%s", message);
 #endif
 }
+#endif
 
 int raw_tracepoint__cgroup_attach_task(struct bpf_raw_tracepoint_args *ctx)
 {
@@ -249,9 +256,11 @@ int raw_tracepoint__sys_enter(struct bpf_raw_tracepoint_args *ctx)
         if (!get_container_has_started(container))
             return 0;
 
+#ifdef DEBUG
         char syscall_name[STRING_MAX_LEN] = "?";
         get_syscall_name(id, syscall_name);
         print_event(&container, "sys", syscall_name);
+#endif
 
         struct container_key container_key = container_key_init(container, id);
         container_syscall_count.increment(container_key);
@@ -275,9 +284,11 @@ int kprobe__cap_capable(struct pt_regs *ctx,
     if (!is_cap_allowed(current_task, cap))
         return 0;
 
+#ifdef DEBUG
     char capability_name[STRING_MAX_LEN] = "?";
     get_capability_name(cap, capability_name);
     print_event(&container, "cap", capability_name);
+#endif
 
     struct container_key container_key = container_key_init(container, cap);
     container_capability_count.increment(container_key);
