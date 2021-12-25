@@ -1,5 +1,5 @@
 import unittest
-from ctrace.tracer import docker_daemon, ContainerEvent, ContainerStatus
+from ctrace.oci import docker_daemon, ContainerEvent, ContainerStatus
 from datetime import datetime
 from utils.docker_run import DockerRun
 

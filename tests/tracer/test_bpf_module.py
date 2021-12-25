@@ -5,30 +5,22 @@ from utils.processes import get_pid_command
 
 
 class TestBPFModule(unittest.TestCase):
-    def test_pid_to_containers_len(self):
+    def test_pid_to_container(self):
         with BPFModule() as module:
-            module.pid_to_container[4823] = '4e1de613e001'
-            self.assertGreater(len(module.pid_to_container), 0)
+            with DockerRun('busybox', ['sleep', '8393']) as container:
+                self.assertIn(container.id, module.pid_to_container.values())
 
-    def test_pid_to_containers_get_se(self):
-        pid = 5832
-        container_id = 'e9eeec521828'
+    def test_pid_to_container_removal(self):
         with BPFModule() as module:
-            module.pid_to_container[pid] = container_id
-            self.assertEqual(module.pid_to_container[pid], container_id)
+            with DockerRun('busybox', ['sleep', '4827']) as container:
+                pass
+            self.assertNotIn(container.id, module.pid_to_container.values())
 
-    def test_pid_to_containers_inexistent(self):
-        with self.assertRaises(KeyError):
+    def test_prefill_pid_to_container(self):
+        with DockerRun('busybox', ['sleep', '3821']) as container:
             with BPFModule() as module:
-                _ = module.pid_to_container[9999]
-
-    def test_pid_to_containers_del(self):
-        pid = 3821
-        with BPFModule() as module:
-            module.pid_to_container[pid] = '62764899b2de'
-            del module.pid_to_container[pid]
-            with self.assertRaises(KeyError):
-                _ = module.pid_to_container[pid]
+                container.exec_run(['date'])
+                self.assertIn(container.id, module.pid_to_container.values())
 
     def test_cgroup_attach_task(self):
         with BPFModule() as module:

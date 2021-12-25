@@ -1,7 +1,7 @@
 import unittest
 from utils.docker_run import DockerRun
 from utils.processes import get_pid_command
-from ctrace.tracer import docker_cgroups
+from ctrace.oci import docker_cgroups
 
 
 class TestDockerCgroups(unittest.TestCase):
