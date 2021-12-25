@@ -5,7 +5,7 @@ from utils.processes import get_pid_command
 
 
 class TestBPFModule(unittest.TestCase):
-    def test_pid_to_containers_le(self):
+    def test_pid_to_containers_len(self):
         with BPFModule() as module:
             module.pid_to_container[4823] = '4e1de613e001'
             self.assertGreater(len(module.pid_to_container), 0)

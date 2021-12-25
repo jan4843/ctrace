@@ -138,6 +138,10 @@ static inline bool is_runc()
 
 static inline bool get_container_has_started(struct container container)
 {
+#ifdef TRACE_RUNC
+    return true;
+#endif
+
     if (container_not_started.lookup(&container) == NULL)
         return true;
 

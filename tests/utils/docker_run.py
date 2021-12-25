@@ -3,7 +3,7 @@ import docker
 
 class DockerRun:
     def __init__(self, image, command=None, **kwargs):
-        self.client = docker.DockerClient()
+        self.client = docker.from_env()
         self.client.images.pull(image, tag=self._image_tag(image))
         self.container = self.client.containers.run(
             image, command, **kwargs,

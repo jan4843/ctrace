@@ -64,8 +64,9 @@ class PidToContainerDict:
 class BPFModule:
     _BPF_SRC_FILENAME = 'module.bpf.c'
 
-    def __init__(self, debug=False):
+    def __init__(self, trace_runc=False, debug=False):
         self._bpf_program = None
+        self.trace_runc = trace_runc
         self.debug = debug
 
     def __enter__(self):
@@ -88,9 +89,13 @@ class BPFModule:
 
     @property
     def _cflags(self):
+        flags = []
+        if self.trace_runc:
+            flags.append('-DTRACE_RUNC=1')
         if self.debug:
+            flags.append('-DDEBUG=1')
             return ['-DDEBUG=1']
-        return []
+        return flags
 
     @property
     def pid_to_container(self):

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from docker import DockerClient
+import docker
 from docker.models.containers import Container
 from enum import Enum
 from datetime import datetime, timedelta
@@ -19,7 +19,7 @@ class ContainerEvent:
 
 class DockerDaemon:
     def __init__(self):
-        self.client = DockerClient()
+        self.client = docker.from_env()
 
     def events(self, since: datetime = None, until: datetime = None):
         if since is None:
