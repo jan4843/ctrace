@@ -43,6 +43,17 @@ class BPFModule:
         return flags
 
     @property
+    def container_ids(self) -> set[str]:
+        result = set()
+        for value in self._bpf_program['pid_to_container'].values():
+            container_id = value.id.decode()
+            result.add(container_id)
+        for key in self._bpf_program['container_syscall_count'].keys():
+            container_id = key.container.id.decode()
+            result.add(container_id)
+        return result
+
+    @property
     def pid_to_container(self) -> dict[int, str]:
         bpf_map = self._bpf_program['pid_to_container']
         result = {}

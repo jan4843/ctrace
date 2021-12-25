@@ -14,6 +14,12 @@ class TestBPFModule(unittest.TestCase):
                 syscalls_without_runc = module.syscalls_counts(container.id).keys()
         self.assertGreater(len(syscalls_with_runc), len(syscalls_without_runc))
 
+    def test_container_pids(self):
+        with BPFModule() as module:
+            with DockerRun('busybox', ['sleep', '1392']) as container:
+                pass
+            self.assertIn(container.id, module.container_ids)
+
     def test_pid_to_container(self):
         with BPFModule() as module:
             with DockerRun('busybox', ['sleep', '8393']) as container:
