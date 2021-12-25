@@ -5,6 +5,15 @@ from utils.processes import get_pid_command
 
 
 class TestBPFModule(unittest.TestCase):
+    def test_trace_runc(self):
+        with BPFModule(trace_runc=True) as module:
+            with DockerRun('busybox', ['sleep', '1392']) as container:
+                syscalls_with_runc = module.syscalls_counts(container.id).keys()
+        with BPFModule(trace_runc=False) as module:
+            with DockerRun('busybox', ['sleep', '4839']) as container:
+                syscalls_without_runc = module.syscalls_counts(container.id).keys()
+        self.assertGreater(len(syscalls_with_runc), len(syscalls_without_runc))
+
     def test_pid_to_container(self):
         with BPFModule() as module:
             with DockerRun('busybox', ['sleep', '8393']) as container:
