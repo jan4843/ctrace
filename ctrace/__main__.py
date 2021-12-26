@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 
 
@@ -40,6 +41,13 @@ def main():
     parser = get_parser()
     args = parser.parse_args()
 
+    if args.action == 'diff':
+        from .cli.diff import main
+        return main(
+            tracefile1=args.Tracefile[0],
+            tracefile2=args.Tracefile[1],
+        )
+
     if args.action == 'capability':
         from .cli.capability import main
         return main(
@@ -53,7 +61,7 @@ def main():
         )
 
     parser.print_help()
-    return 64
+    return os.EX_USAGE
 
 if __name__ == '__main__':
     try:
