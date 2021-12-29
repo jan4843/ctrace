@@ -1,7 +1,6 @@
 services:
   ctrace:
-    build:
-      context: .
+    build: .
     image: ctrace
     container_name: ctrace
     privileged: true

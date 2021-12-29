@@ -10,4 +10,5 @@ RUN apt-get update && \
 COPY . ./
 
 ENV PYTHONUNBUFFERED=1
-CMD ["tini", "--", "python3", "-m", "main", "trace"]
+ENV PYTHONPATH=/app
+ENTRYPOINT ["tini", "--", "/app/entrypoint.sh"]
