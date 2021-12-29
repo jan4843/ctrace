@@ -9,6 +9,10 @@ def get_parser():
 
     trace_parser = subparsers.add_parser('trace',
         help='Start tracing annotated containers')
+    trace_parser.add_argument('--debug',
+        default=False,
+        action='store_true',
+        help='Write eBPF events to /sys/kernel/debug/tracing/trace_pipe')
 
     options_parser = subparsers.add_parser('options',
         help='Generate run options with restrictions')
@@ -40,6 +44,12 @@ def get_parser():
 def main():
     parser = get_parser()
     args = parser.parse_args()
+
+    if args.action == 'trace':
+        from .cli.trace import main
+        return main(
+            debug=args.debug,
+        )
 
     if args.action == 'diff':
         from .cli.diff import main

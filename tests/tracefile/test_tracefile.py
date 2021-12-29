@@ -47,8 +47,7 @@ class TestTracefile(unittest.TestCase):
             kill
 
             SYSCALLS
-            sync
-        '''))
+            sync'''))
 
     def test_write(self):
         with tempfile.NamedTemporaryFile('w') as f:

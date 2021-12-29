@@ -41,7 +41,7 @@ class Tracefile:
         return '\n'.join([
             'ARCH', self.arch, '',
             'CAPABILITIES', *sorted(self.capabilities), '',
-            'SYSCALLS', *sorted(self.syscalls), '',
+            'SYSCALLS', *sorted(self.syscalls),
         ])
 
     def write(self):

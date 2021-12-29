@@ -35,11 +35,11 @@ class ContainerMonitor:
             if container_id not in old:
                 result[container_id].update(counts.keys())
             else:
-                for syscall, count in counts.items():
-                    if syscall not in old[container_id]:
-                        result[container_id].add(syscall)
-                    elif count != old[container_id][syscall]:
-                        result[container_id].add(syscall)
+                for key, count in counts.items():
+                    if key not in old[container_id]:
+                        result[container_id].add(key)
+                    elif count != old[container_id][key]:
+                        result[container_id].add(key)
         return result
 
     @property
