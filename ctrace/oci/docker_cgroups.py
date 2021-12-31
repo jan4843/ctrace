@@ -18,10 +18,13 @@ class DockerCgroups:
     @property
     def _container_ids(self) -> list[str]:
         ids = []
-        for cgroup in os.scandir(self._CGROUP_DIR):
-            name = cgroup.name
-            if len(name) == self._CONTAINER_ID_LONG_LEN:
-                ids.append(name)
+        try:
+            for cgroup in os.scandir(self._CGROUP_DIR):
+                name = cgroup.name
+                if len(name) == self._CONTAINER_ID_LONG_LEN:
+                    ids.append(name)
+        except FileNotFoundError:
+            pass
         return ids
 
     def _container_pids(self, container_id: str) -> list[int]:

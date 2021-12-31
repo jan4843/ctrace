@@ -16,6 +16,9 @@ def get_parser():
 
     options_parser = subparsers.add_parser('options',
         help='Generate run options with restrictions')
+    options_parser.add_argument('--output',
+        help='Path of the resulting seccomp profile',
+        required=True)
     options_parser.add_argument('Tracefile',
         help='File or directory with Tracefiles',
         nargs=argparse.ONE_OR_MORE)
@@ -49,6 +52,13 @@ def main():
         from .cli.trace import main
         return main(
             debug=args.debug,
+        )
+
+    if args.action == 'options':
+        from .cli.options import main
+        return main(
+            output=args.output,
+            paths=args.Tracefile,
         )
 
     if args.action == 'diff':
