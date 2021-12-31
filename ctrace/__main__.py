@@ -29,6 +29,16 @@ def get_parser():
         help='Tracefile to compare',
         nargs=2)
 
+    requirements_parser = subparsers.add_parser('requirements',
+        help='Generate Tracefile for minimal runtime requirements')
+    requirements_parser.add_argument('--output',
+        help='Path of the requirements Tracefile',
+        required=True)
+    requirements_parser.add_argument('--all',
+        default=False,
+        action='store_true',
+        help='Prevent minimizing syscalls requirements')
+
     capability_parser = subparsers.add_parser('capability',
         help='Look up a capability')
     capability_parser.add_argument('query',
@@ -66,6 +76,14 @@ def main():
         return main(
             tracefile1=args.Tracefile[0],
             tracefile2=args.Tracefile[1],
+        )
+
+    if args.action == 'requirements':
+        from .cli.requirements import main
+        print(not args.all)
+        return main(
+            output=args.output,
+            minimize=not args.all,
         )
 
     if args.action == 'capability':

@@ -26,10 +26,10 @@ def cap_options(capabilities: set[str]) -> list[str]:
 
 def seccomp_options(profile_path: str, syscalls: set[str]) -> list[str]:
     profile = {
-        "defaultAction": "SCMP_ACT_ERRNO",
-        "syscalls": [{
-            "action": "SCMP_ACT_ALLOW",
-            "names": sorted(list(syscalls))
+        'defaultAction': 'SCMP_ACT_ERRNO',
+        'syscalls': [{
+            'action': 'SCMP_ACT_ALLOW',
+            'names': sorted(list(syscalls))
         }]
     }
     with open(profile_path, 'w', encoding='ascii') as f:
