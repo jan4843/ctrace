@@ -9,6 +9,10 @@ def get_parser():
 
     trace_parser = subparsers.add_parser('trace',
         help='Start tracing annotated containers')
+    trace_parser.add_argument('--runc',
+         default=False,
+         action='store_true',
+         help='Trace runc before container start')
     trace_parser.add_argument('--debug',
         default=False,
         action='store_true',
@@ -34,10 +38,6 @@ def get_parser():
     requirements_parser.add_argument('--output',
         help='Path of the requirements Tracefile',
         required=True)
-    requirements_parser.add_argument('--all',
-        default=False,
-        action='store_true',
-        help='Prevent minimizing syscalls requirements')
 
     capability_parser = subparsers.add_parser('capability',
         help='Look up a capability')
@@ -80,10 +80,8 @@ def main():
 
     if args.action == 'requirements':
         from .cli.requirements import main
-        print(not args.all)
         return main(
             output=args.output,
-            minimize=not args.all,
         )
 
     if args.action == 'capability':

@@ -55,17 +55,10 @@ def noop_executable_path():
     return os.path.join(src_root, 'noop', arch)
 
 
-def main(output: str, minimize: bool):
+def main(output: str):
     required_syscalls = sorted(list(runc_syscalls()))
     count = len(required_syscalls)
-    print(f'Found {count} potential required syscalls')
-
-    if minimize:
-        for index, potential_syscall in enumerate(required_syscalls[:], start=1):
-            print(f'({index}/{count}) Testing {potential_syscall}...')
-            syscalls_except_current = [s for s in required_syscalls if s != potential_syscall]
-            if container_can_start_with(syscalls_except_current):
-                required_syscalls.remove(potential_syscall)
+    print(f'Found {count} required syscalls for runc')
 
     with Tracefile(output) as tracefile:
         tracefile.add(syscalls=required_syscalls)

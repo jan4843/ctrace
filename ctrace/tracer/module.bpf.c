@@ -28,8 +28,8 @@ BPF_HASH(syscall_names, int, struct string);
 #endif
 
 BPF_HASH(pid_to_container, int, struct container);
-BPF_HASH(container_not_started, struct container, int);
 BPF_HASH(runc_has_run, struct container, int);
+BPF_HASH(runc_not_finished, struct container, int);
 
 BPF_HASH(container_capability_count, struct container_key, int);
 BPF_HASH(container_syscall_count, struct container_key, int);
@@ -136,36 +136,30 @@ static inline bool is_runc()
     return is_runc;
 }
 
-static inline bool get_container_has_started(struct container container)
+static inline bool get_runc_finished(struct container container)
 {
-#ifdef TRACE_RUNC
-    return true;
-#endif
-
-    if (container_not_started.lookup(&container) == NULL)
-        return true;
-
     if (is_runc())
     {
         int zero = 0;
-        runc_has_run.lookup_or_try_init(&container, &zero);
-        return false;
+        runc_has_run.insert(&container, &zero);
+    }
+    else if (runc_has_run.lookup(&container) != NULL)
+    {
+        runc_not_finished.delete(&container);
     }
 
-    if (runc_has_run.lookup(&container) != NULL)
+    if (runc_not_finished.lookup(&container) == NULL)
     {
         runc_has_run.delete(&container);
-        container_not_started.delete(&container);
         return true;
     }
-
     return false;
 }
 
-static inline void set_container_not_started(struct container container)
+static inline void set_runc_not_finished(struct container container)
 {
     int zero = 0;
-    container_not_started.insert(&container, &zero);
+    runc_not_finished.insert(&container, &zero);
 }
 
 #ifdef DEBUG
@@ -212,7 +206,7 @@ int raw_tracepoint__cgroup_attach_task(struct bpf_raw_tracepoint_args *ctx)
         get_container_id(dst_cgrp, &container);
         int pid = get_global_pid(task);
 
-        set_container_not_started(container);
+        set_runc_not_finished(container);
         pid_to_container.insert(&pid, &container);
 
         return 0;
@@ -246,6 +240,10 @@ int raw_tracepoint__sched_process_exit(struct bpf_raw_tracepoint_args *ctx)
     }
 }
 
+#ifdef TRACE_RUNC
+BPF_HASH(runc_pid, struct container, int);
+#endif
+
 int raw_tracepoint__sys_enter(struct bpf_raw_tracepoint_args *ctx)
 {
     struct pt_regs *regs = (struct pt_regs *)ctx->args[0];
@@ -257,8 +255,30 @@ int raw_tracepoint__sys_enter(struct bpf_raw_tracepoint_args *ctx)
         if (!get_container(current_task, &container))
             return 0;
 
-        if (!get_container_has_started(container))
+        if (!get_runc_finished(container))
+        {
+#ifdef TRACE_RUNC
+            if (is_runc())
+            {
+                int pid = get_global_pid(current_task);
+
+                if (id == __NR_seccomp)
+                    runc_pid.lookup_or_try_init(&container, &pid);
+
+                int *runc_pid_ptr = runc_pid.lookup(&container);
+                if (runc_pid_ptr == NULL || pid != *runc_pid_ptr)
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return 0;
+            }
+#else
             return 0;
+#endif
+        }
 
 #ifdef DEBUG
         char syscall_name[STRING_MAX_LEN] = "?";
@@ -282,7 +302,7 @@ int kprobe__cap_capable(struct pt_regs *ctx,
     if (!get_container(current_task, &container))
         return 0;
 
-    if (!get_container_has_started(container))
+    if (!get_runc_finished(container))
         return 0;
 
     if (!is_cap_allowed(current_task, cap))

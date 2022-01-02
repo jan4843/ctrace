@@ -39,7 +39,6 @@ class BPFModule:
             flags.append('-DTRACE_RUNC=1')
         if self.debug:
             flags.append('-DDEBUG=1')
-            return ['-DDEBUG=1']
         return flags
 
     @property

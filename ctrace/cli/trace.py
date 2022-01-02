@@ -63,12 +63,13 @@ def handle_event(event, tracefiles, monitor):
             pass
 
 
-def main(debug=False):
+def main(debug=False, trace_runc=False):
     tracefiles = {}
     event_iterator = TimeoutIterator(TIMEOUT, docker_daemon.events())
     try:
-        with BPFModule(debug=debug) as module:
+        with BPFModule(debug=debug, trace_runc=trace_runc) as module:
             monitor = ContainerMonitor(bpf_module=module)
+            print('Waiting for Docker events')
             for event in event_iterator:
                 monitor.update()
                 handle_event(event, tracefiles, monitor)
