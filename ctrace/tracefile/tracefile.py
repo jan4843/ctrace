@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 
 
@@ -7,7 +8,7 @@ class Tracefile:
         self.arch = os.uname().machine
         self.capabilities = set()
         self.syscalls = set()
-        self.file = path
+        self.file = self._expand_strftime(path)
         if self.exists:
             self._parse_file()
 
@@ -49,6 +50,10 @@ class Tracefile:
         Path(dir_name).mkdir(parents=True, exist_ok=True)
         with open(self.file, 'w', encoding='ascii') as f:
             f.write(str(self) + '\n')
+
+    @staticmethod
+    def _expand_strftime(path: str) -> str:
+        return datetime.now().strftime(path)
 
     def __enter__(self):
         return self

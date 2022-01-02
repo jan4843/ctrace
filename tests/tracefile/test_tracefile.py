@@ -1,10 +1,20 @@
-import unittest
+import os
 import tempfile
+import unittest
 from textwrap import dedent
 from ctrace.tracefile import Tracefile
 
 
 class TestTracefile(unittest.TestCase):
+    def test_expand_strftime_path(self):
+        with tempfile.TemporaryDirectory() as d:
+            # '%%' is expanded to '%' in strftime
+            given_name = os.path.join(d, 'Tracefile-%%')
+            expected_file = os.path.join(d, 'Tracefile-%')
+            with Tracefile(given_name):
+                pass
+            self.assertTrue(os.path.isfile(expected_file))
+
     def test_parse(self):
         with tempfile.NamedTemporaryFile('w') as f:
             f.write(dedent('''\

@@ -40,9 +40,14 @@ def seccomp_options(profile_path: str, syscalls: set[str]) -> list[str]:
 
 def main(output: str, paths: list[str]):
     tracefiles = expand_paths(paths)
+
     if not tracefiles:
         print('No Tracefile found')
         return os.EX_NOINPUT
+
+    for tracefile in tracefiles:
+        if not Tracefile(tracefile).exists:
+            print(f'Tracefile {tracefile} not found')
 
     capabilities = set()
     syscalls = set()
