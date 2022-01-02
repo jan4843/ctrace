@@ -30,6 +30,7 @@ BPF_HASH(syscall_names, int, struct string);
 BPF_HASH(pid_to_container, int, struct container);
 BPF_HASH(container_not_started, struct container, int);
 BPF_HASH(runc_has_run, struct container, int);
+BPF_HASH(runc_not_finished, struct container, int);
 
 BPF_HASH(container_capability_count, struct container_key, int);
 BPF_HASH(container_syscall_count, struct container_key, int);
@@ -138,34 +139,44 @@ static inline bool is_runc()
 
 static inline bool get_container_has_started(struct container container)
 {
-#ifdef TRACE_RUNC
-    return true;
-#endif
-
-    if (container_not_started.lookup(&container) == NULL)
-        return true;
-
-    if (is_runc())
-    {
-        int zero = 0;
-        runc_has_run.lookup_or_try_init(&container, &zero);
-        return false;
-    }
-
-    if (runc_has_run.lookup(&container) != NULL)
-    {
-        runc_has_run.delete(&container);
-        container_not_started.delete(&container);
-        return true;
-    }
-
-    return false;
+    return container_not_started.lookup(&container) == NULL;
 }
 
 static inline void set_container_not_started(struct container container)
 {
     int zero = 0;
     container_not_started.insert(&container, &zero);
+}
+
+static inline void set_container_started(struct container container)
+{
+    container_not_started.delete(&container);
+}
+
+static inline bool get_runc_finished(struct container container)
+{
+    if (is_runc())
+    {
+        int zero = 0;
+        runc_has_run.insert(&container, &zero);
+    }
+    else if (runc_has_run.lookup(&container) != NULL)
+    {
+        runc_not_finished.delete(&container);
+    }
+
+    if (runc_not_finished.lookup(&container) == NULL)
+    {
+        runc_has_run.delete(&container);
+        return true;
+    }
+    return false;
+}
+
+static inline void set_runc_not_finished(struct container container)
+{
+    int zero = 0;
+    runc_not_finished.insert(&container, &zero);
 }
 
 #ifdef DEBUG
@@ -213,6 +224,7 @@ int raw_tracepoint__cgroup_attach_task(struct bpf_raw_tracepoint_args *ctx)
         int pid = get_global_pid(task);
 
         set_container_not_started(container);
+        set_runc_not_finished(container);
         pid_to_container.insert(&pid, &container);
 
         return 0;
@@ -258,7 +270,12 @@ int raw_tracepoint__sys_enter(struct bpf_raw_tracepoint_args *ctx)
             return 0;
 
         if (!get_container_has_started(container))
-            return 0;
+        {
+            if (id == __NR_seccomp)
+                set_container_started(container);
+            else
+                return 0;
+        }
 
 #ifdef DEBUG
         char syscall_name[STRING_MAX_LEN] = "?";
@@ -280,6 +297,9 @@ int kprobe__cap_capable(struct pt_regs *ctx,
 
     struct container container;
     if (!get_container(current_task, &container))
+        return 0;
+
+    if (!get_runc_finished(container))
         return 0;
 
     if (!get_container_has_started(container))

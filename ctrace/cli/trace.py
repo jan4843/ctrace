@@ -69,6 +69,7 @@ def main(debug=False):
     try:
         with BPFModule(debug=debug) as module:
             monitor = ContainerMonitor(bpf_module=module)
+            print('Waiting for Docker events')
             for event in event_iterator:
                 monitor.update()
                 handle_event(event, tracefiles, monitor)
