@@ -78,3 +78,23 @@ class TestBPFModule(unittest.TestCase):
             counts = module.syscalls_counts(container.id)
             found_syscall_count = counts[expected_syscall]
             self.assertGreaterEqual(found_syscall_count, 1)
+
+    def test_capabilities_counts_existing_container(self):
+        command = ['ping', '-c1', '127.0.0.1']
+        expected_capability = 'net_raw'
+        with DockerRun('busybox', ['sleep', '5832']) as container:
+            with BPFModule() as module:
+                container.exec_run(command)
+                counts = module.capabilities_counts(container.id)
+            found_capability_count = counts[expected_capability]
+            self.assertGreaterEqual(found_capability_count, 1)
+
+    def test_syscalls_counts_existing_container(self):
+        command = ['date']
+        expected_syscall = 'gettimeofday'
+        with DockerRun('busybox', ['sleep', '9372']) as container:
+            with BPFModule() as module:
+                container.exec_run(command)
+                counts = module.syscalls_counts(container.id)
+            found_syscall_count = counts[expected_syscall]
+            self.assertGreaterEqual(found_syscall_count, 1)
