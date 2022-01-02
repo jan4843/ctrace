@@ -258,6 +258,8 @@ int raw_tracepoint__sched_process_exit(struct bpf_raw_tracepoint_args *ctx)
     }
 }
 
+BPF_HASH(runc_pid, struct container, int);
+
 int raw_tracepoint__sys_enter(struct bpf_raw_tracepoint_args *ctx)
 {
     struct pt_regs *regs = (struct pt_regs *)ctx->args[0];
@@ -269,12 +271,23 @@ int raw_tracepoint__sys_enter(struct bpf_raw_tracepoint_args *ctx)
         if (!get_container(current_task, &container))
             return 0;
 
-        if (!get_container_has_started(container))
+        if (!get_runc_finished(container))
         {
-            if (id == __NR_seccomp)
-                set_container_started(container);
+            if (is_runc())
+            {
+                int pid = get_global_pid(current_task);
+
+                if (id == __NR_seccomp)
+                    runc_pid.lookup_or_try_init(&container, &pid);
+
+                int *pid_ptr = runc_pid.lookup(&container);
+                if (pid_ptr == NULL || *pid_ptr != pid)
+                    return 0;
+            }
             else
+            {
                 return 0;
+            }
         }
 
 #ifdef DEBUG
