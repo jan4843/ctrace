@@ -1,6 +1,7 @@
 import os
 import queue
 import threading
+from datetime import datetime, timedelta
 from ctrace.monitor import ContainerMonitor
 from ctrace.oci import docker_daemon, ContainerStatus
 from ctrace.tracefile import Tracefile
@@ -63,8 +64,28 @@ def handle_event(event, tracefiles, monitor):
             pass
 
 
+def cleanup_module(traced, containers_first_seen, module):
+    for container_id in module.container_ids:
+        if not container_id in traced:
+            if not container_id in containers_first_seen:
+                containers_first_seen[container_id] = datetime.now()
+
+    for container_id in traced:
+        try:
+            del containers_first_seen[container_id]
+        except KeyError:
+            pass
+
+    for container_id in list(containers_first_seen.keys()):
+        first_seen = containers_first_seen[container_id]
+        if datetime.now() - first_seen > timedelta(seconds=TIMEOUT):
+            module.unfollow(container_id)
+            del containers_first_seen[container_id]
+
+
 def main(debug=False, trace_runc=False):
     tracefiles = {}
+    containers_first_seen = {}
     event_iterator = TimeoutIterator(TIMEOUT, docker_daemon.events())
     try:
         with BPFModule(debug=debug, trace_runc=trace_runc) as module:
@@ -73,5 +94,6 @@ def main(debug=False, trace_runc=False):
             for event in event_iterator:
                 monitor.update()
                 handle_event(event, tracefiles, monitor)
+                cleanup_module(tracefiles.keys(), containers_first_seen, module)
     except KeyboardInterrupt:
         return os.EX_OK

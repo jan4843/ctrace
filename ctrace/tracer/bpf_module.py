@@ -76,6 +76,20 @@ class BPFModule:
             transform_key=lambda id_: syscalls.names[id_],
         )
 
+    def unfollow(self, container_id: str) -> None:
+        bpf_map = self._bpf_program['pid_to_container']
+        for key, value in bpf_map.items():
+            if value.id.decode() == container_id:
+                del bpf_map[key]
+        bpf_map = self._bpf_program['container_capability_count']
+        for key in bpf_map.keys():
+            if key.container.id.decode() == container_id:
+                del bpf_map[key]
+        bpf_map = self._bpf_program['container_syscall_count']
+        for key in bpf_map.keys():
+            if key.container.id.decode() == container_id:
+                del bpf_map[key]
+
     def _counts(self, bpf_map, container_id, transform_key) -> dict[str, int]:
         result = {}
         for key, value in self._bpf_program[bpf_map].items():

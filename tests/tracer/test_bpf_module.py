@@ -14,7 +14,7 @@ class TestBPFModule(unittest.TestCase):
                 syscalls_without_runc = module.syscalls_counts(container.id).keys()
         self.assertGreater(len(syscalls_with_runc), len(syscalls_without_runc))
 
-    def test_container_pids(self):
+    def test_container_ids(self):
         with BPFModule() as module:
             with DockerRun('busybox', ['sleep', '1392']) as container:
                 pass
@@ -98,3 +98,13 @@ class TestBPFModule(unittest.TestCase):
                 counts = module.syscalls_counts(container.id)
             found_syscall_count = counts[expected_syscall]
             self.assertGreaterEqual(found_syscall_count, 1)
+
+    def test_unfollow(self):
+        with BPFModule() as module:
+            with DockerRun('busybox', ['sleep', '4813']) as container:
+                container.exec_run(['date'])
+                container.exec_run(['ping', '-c1', '127.0.0.1'])
+                module.unfollow(container.id)
+            self.assertNotIn(container.id, module.pid_to_container.values())
+            self.assertEqual(len(module.capabilities_counts(container.id)), 0)
+            self.assertEqual(len(module.syscalls_counts(container.id)), 0)
