@@ -7,7 +7,7 @@ from ctrace.oci import docker_daemon, ContainerStatus
 from ctrace.tracefile import Tracefile
 from ctrace.tracer import BPFModule
 
-LABEL = 'ctrace.output-file'
+LABEL = 'ctrace.tracefile'
 TIMEOUT = 15
 
 
