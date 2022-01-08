@@ -13,3 +13,5 @@ services:
       - /sys/fs/bpf:/sys/fs/bpf
 
       - /var/run/docker.sock:/var/run/docker.sock:ro
+
+      - ./data:/data

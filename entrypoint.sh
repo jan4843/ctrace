@@ -5,8 +5,4 @@ if [ "$1" = -- ]; then
     exec "$@"
 fi
 
-if [ $# -eq 0 ]; then
-    set trace
-fi
-
 exec python3 -m ctrace "$@"
